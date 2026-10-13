@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Lumen — a fast, private-by-default chat interface for Claude." />
+    <meta name="color-scheme" content="light dark" />
+    <title>Lumen Chat</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      // Apply the saved or system theme before first paint to avoid a flash.
+      (function () {
+        try {
+          var prefs = JSON.parse(localStorage.getItem('lumen-chat:prefs:v1') || '{}');
+          var dark = prefs.theme ? prefs.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-ByORZCd1.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-K7mC6fHW.css">
+  </head>
+  <body class="h-full bg-white text-ink-900 antialiased dark:bg-ink-900 dark:text-ink-100">
+    <a href="#composer-input" class="skip-link">Skip to message input</a>
+
+    <div id="app" class="flex h-full overflow-hidden" data-sidebar="open">
+      <!-- Mobile backdrop -->
+      <div id="sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-ink-950/50 backdrop-blur-[1px] md:hidden" aria-hidden="true"></div>
+
+      <!-- Sidebar -->
+      <aside
+        id="sidebar"
+        class="sidebar fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-ink-200/70 bg-ink-50 dark:border-ink-800 dark:bg-ink-950 md:static md:z-auto"
+        aria-label="Conversations"
+      >
+        <div class="flex items-center justify-between gap-2 px-3 pb-2 pt-3">
+          <a href="/" class="flex items-center gap-2 rounded-lg px-2 py-1.5 font-semibold tracking-tight focus-ring" aria-label="Lumen home">
+            <span class="grid h-7 w-7 place-items-center rounded-lg bg-accent-500 text-white shadow-sm" data-icon="spark"></span>
+            <span>Lumen</span>
+          </a>
+          <button type="button" id="sidebar-close" class="icon-btn" aria-label="Close sidebar" data-icon="panel"></button>
+        </div>
+
+        <div class="px-3 pb-3">
+          <button type="button" id="new-chat" class="btn-new-chat">
+            <span data-icon="plus"></span>
+            <span>New chat</span>
+            <kbd class="ml-auto hidden text-[11px] font-medium text-ink-400 lg:inline">Ctrl ⇧ O</kbd>
+          </button>
+        </div>
+
+        <nav id="conversation-list" class="scrollbar-thin flex-1 overflow-y-auto px-2 pb-4" aria-label="Saved conversations"></nav>
+
+        <div class="flex items-center gap-2 border-t border-ink-200/70 px-3 py-3 text-xs text-ink-500 dark:border-ink-800 dark:text-ink-400">
+          <span class="truncate">Chats are saved in this browser.</span>
+          <button type="button" id="theme-toggle" class="icon-btn ml-auto" aria-label="Toggle dark mode" data-icon="moon"></button>
+        </div>
+      </aside>
+
+      <!-- Main column -->
+      <main class="relative flex min-w-0 flex-1 flex-col" aria-label="Chat">
+        <header class="flex h-14 shrink-0 items-center gap-1 px-2 md:px-3">
+          <button type="button" id="sidebar-open" class="icon-btn" aria-label="Open sidebar" aria-controls="sidebar" aria-expanded="true" data-icon="panel"></button>
+          <button type="button" id="header-new-chat" class="icon-btn" aria-label="New chat" data-icon="edit"></button>
+          <h1 id="chat-title" class="ml-1 truncate text-sm font-medium text-ink-700 dark:text-ink-200">New chat</h1>
+        </header>
+
+        <div id="thread-scroll" class="scrollbar-thin relative flex-1 overflow-y-auto">
+          <section id="welcome" class="mx-auto flex min-h-full max-w-3xl flex-col items-center justify-center px-4 pb-6 pt-4 text-center" aria-labelledby="welcome-heading">
+            <span class="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-accent-500 text-white shadow-lg shadow-accent-500/20" data-icon="spark-lg"></span>
+            <h2 id="welcome-heading" class="text-2xl font-semibold tracking-tight sm:text-3xl">What can I help you with?</h2>
+            <p class="mt-2 max-w-md text-sm text-ink-500 dark:text-ink-400">Ask anything — write, plan, learn, or code. Responses stream in as Claude thinks.</p>
+            <div id="suggestions" class="mt-8 grid w-full max-w-2xl gap-2 sm:grid-cols-2" role="list" aria-label="Suggested prompts"></div>
+          </section>
+
+          <ol id="messages" class="mx-auto hidden w-full max-w-3xl space-y-6 px-4 pb-8 pt-2" aria-live="polite" aria-label="Messages"></ol>
+
+          <button type="button" id="scroll-bottom" class="scroll-bottom-btn hidden" aria-label="Scroll to latest message" data-icon="arrow-down"></button>
+        </div>
+
+        <!-- Composer -->
+        <div class="shrink-0 px-3 pb-3 pt-1 sm:px-4 sm:pb-4">
+          <form id="composer" class="composer mx-auto max-w-3xl" novalidate>
+            <label for="composer-input" class="sr-only">Message Lumen</label>
+            <textarea
+              id="composer-input"
+              rows="1"
+              placeholder="Message Lumen…"
+              class="composer-input scrollbar-thin"
+              aria-describedby="composer-hint"
+              autocomplete="off"
+            ></textarea>
+            <div class="flex items-center justify-between gap-2 px-2 pb-2">
+              <p id="composer-hint" class="hidden pl-1 text-[11px] text-ink-400 sm:block">
+                <kbd>Enter</kbd> to send · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line
+              </p>
+              <div class="ml-auto flex items-center gap-2">
+                <button type="button" id="stop-button" class="send-btn hidden" aria-label="Stop generating" title="Stop generating (Esc)">
+                  <span data-icon="stop"></span>
+                </button>
+                <button type="submit" id="send-button" class="send-btn" aria-label="Send message" title="Send message" disabled>
+                  <span data-icon="arrow-up"></span>
+                </button>
+              </div>
+            </div>
+          </form>
+          <p class="mt-2 text-center text-[11px] text-ink-400">Claude can make mistakes. Check important information.</p>
+        </div>
+      </main>
+    </div>
+
+    <!-- Delete confirmation -->
+    <dialog id="delete-dialog" class="dialog" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-desc">
+      <form method="dialog" class="p-6">
+        <h2 id="delete-dialog-title" class="text-lg font-semibold">Delete chat?</h2>
+        <p id="delete-dialog-desc" class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+          This will permanently delete <strong id="delete-dialog-name" class="font-semibold"></strong> from this browser.
+        </p>
+        <div class="mt-6 flex justify-end gap-2">
+          <button value="cancel" class="btn-secondary" autofocus>Cancel</button>
+          <button value="confirm" class="btn-danger">Delete</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toasts" class="pointer-events-none fixed inset-x-0 bottom-24 z-50 flex flex-col items-center gap-2 px-4" role="status" aria-live="polite"></div>
+  </body>
+</html>
